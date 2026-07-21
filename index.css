@@ -1,0 +1,1395 @@
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  companyProfile,
+  productsList,
+  mockupPrompts,
+  brandColors,
+  taglineAlternatives,
+  brandGuideline,
+  featuredArticle,
+  ProductDetails
+} from "./data";
+
+// Import generated brand assets
+import logoKdkmp from "./assets/images/logo_kdkmp_1784625992326.jpg";
+import farmBanner from "./assets/images/garut_coffee_farm_1784626005273.jpg";
+import premiumPouch from "./assets/images/premium_coffee_pouch_1784626020327.jpg";
+
+import {
+  Coffee,
+  Shield,
+  Leaf,
+  Award,
+  Globe,
+  BookOpen,
+  Palette,
+  FileText,
+  ArrowRight,
+  Copy,
+  Check,
+  ChevronRight,
+  MapPin,
+  Users,
+  Sparkles,
+  Sliders,
+  ExternalLink,
+  Info,
+  Layers,
+  Printer,
+  Calendar,
+  Clock,
+  Menu,
+  X,
+  Plus,
+  Compass
+} from "lucide-react";
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState<"overview" | "profile" | "catalog" | "mockups" | "article" | "guidelines" | "spec-builder">("overview");
+  const [selectedProduct, setSelectedProduct] = useState<ProductDetails>(productsList[0]);
+  const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Spec Sheet Builder State
+  const [specProduct, setSpecProduct] = useState<string>(productsList[0].id);
+  const [specVolume, setSpecVolume] = useState<number>(1000); // in kg
+  const [specIncoterm, setSpecIncoterm] = useState<"FOB" | "CIF" | "EXW">("FOB");
+  const [specDestination, setSpecDestination] = useState<string>("Tokyo Port (Japan)");
+  const [specPackaging, setSpecPackaging] = useState<string>("Sack ekspor goni + grainpro (60 kg)");
+
+  const handleCopy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedText(label);
+    setTimeout(() => {
+      setCopiedText(null);
+    }, 2000);
+  };
+
+  const selectedSpecProductDetails = useMemo(() => {
+    return productsList.find((p) => p.id === specProduct) || productsList[0];
+  }, [specProduct]);
+
+  // Dynamic cost estimates for the simulator (purely mathematical based on actual standard export formulas)
+  const calculatedSpec = useMemo(() => {
+    const basePricePerKg = specProduct === "green-bean-grade1" ? 115000 
+                        : specProduct === "green-bean-specialty" ? 185000
+                        : specProduct === "roasted-medium-roast" ? 220000
+                        : specProduct === "roasted-dark-roast" ? 195000
+                        : 350000; // Gift Box selection
+    
+    const subtotal = basePricePerKg * specVolume;
+    
+    // Incoterm adjustment
+    let shippingFreight = 0;
+    if (specIncoterm === "CIF") {
+      shippingFreight = specVolume * 8500; // Estimated sea cargo + insurance per kg
+    } else if (specIncoterm === "FOB") {
+      shippingFreight = specVolume * 2500; // Port handling & local logistics
+    } else {
+      shippingFreight = 0; // Ex Works Garut
+    }
+
+    const totalCost = subtotal + shippingFreight;
+    const estContainers = Math.ceil(specVolume / 19200); // 19.2 tons fits in a 20ft container
+
+    return {
+      subtotal,
+      shippingFreight,
+      totalCost,
+      estContainers,
+      basePricePerKg
+    };
+  }, [specProduct, specVolume, specIncoterm]);
+
+  const activeSpecProductTasteProfile = useMemo(() => {
+    // Generate dynamic values for progress bars based on coffee profiles
+    if (selectedProduct.id.includes("grade1")) {
+      return { acidity: 7, body: 6, sweetness: 8, balance: 8 };
+    } else if (selectedProduct.id.includes("specialty")) {
+      return { acidity: 9, body: 8, sweetness: 9, balance: 7 };
+    } else if (selectedProduct.id.includes("medium")) {
+      return { acidity: 8, body: 6, sweetness: 8, balance: 9 };
+    } else if (selectedProduct.id.includes("dark")) {
+      return { acidity: 3, body: 9, sweetness: 7, balance: 8 };
+    } else {
+      return { acidity: 8, body: 7, sweetness: 9, balance: 9 };
+    }
+  }, [selectedProduct]);
+
+  return (
+    <div id="app-root" className="bg-[#0A0A0A] text-gray-100 min-h-screen font-sans antialiased selection:bg-[#C8102E] selection:text-white pb-12">
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {copiedText && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: 20, x: "-50%" }}
+            className="fixed bottom-6 left-1/2 z-50 bg-[#C8102E] text-white px-6 py-3 rounded-full shadow-2xl font-mono text-sm border border-[#FF3B5C] flex items-center gap-2"
+          >
+            <Check size={16} />
+            <span>Berhasil Menyalin: <strong className="underline">{copiedText}</strong></span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Hero Banner Section */}
+      <header className="relative border-b border-gray-800 bg-[#0F0F0F] overflow-hidden">
+        {/* Background Overlay Graphic */}
+        <div className="absolute inset-0 bg-radial-gradient from-transparent to-[#0A0A0A] opacity-80 pointer-events-none z-10" />
+        
+        {/* Brand Banner Image */}
+        <div className="absolute inset-0 z-0 opacity-20 hover:opacity-25 transition-opacity duration-700">
+          <img
+            src={farmBanner}
+            alt="KDKMP Garut Coffee Plantation"
+            className="w-full h-full object-cover scale-105"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-20">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-5">
+              <div className="w-20 h-20 rounded-xl overflow-hidden border-2 border-[#C8102E] bg-white p-0.5 shadow-lg shadow-[#C8102E]/20 shrink-0">
+                <img
+                  src={logoKdkmp}
+                  alt="KDKMP Logo"
+                  className="w-full h-full object-contain rounded-lg"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <span className="bg-[#C8102E]/20 text-[#C8102E] text-xs font-semibold px-2.5 py-0.5 rounded border border-[#C8102E]/30 uppercase tracking-wider">
+                    INDONESIAN EXPORT COOPERATIVE
+                  </span>
+                  <span className="hidden sm:inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="hidden sm:inline-block text-xs text-gray-400 font-mono">Q-Grader Certified (SCAA 83-87+)</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-white tracking-tight mt-1">
+                  Koperasi Desa Merah Putih <span className="text-[#C8102E] font-sans font-normal">(KDKMP)</span>
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-400 mt-1 max-w-xl font-sans font-medium">
+                  Sustaining Heritage, Empowering Farmers, Exporting Excellence. Produsen &amp; Eksportir Biji Kopi Arabika Premium Garut, Jawa Barat.
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Actions / Contacts */}
+            <div className="flex flex-wrap items-center gap-3">
+              <a 
+                href="#spec-builder" 
+                onClick={() => setActiveTab("spec-builder")}
+                className="bg-[#C8102E] hover:bg-[#A60D24] text-white text-xs sm:text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-[#C8102E]/15"
+              >
+                <Sliders size={15} />
+                <span>Simulasi Export</span>
+              </a>
+              <button 
+                onClick={() => handleCopy("ismanmaulana98@guru.smp.belajar.id", "Email Kontak KDKMP")}
+                className="bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs sm:text-sm font-medium px-4 py-2.5 rounded-lg border border-gray-700 transition-colors flex items-center gap-2"
+              >
+                <Globe size={15} />
+                <span>Salin Kontak Buyer</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Tabs (Desktop & Tablet) */}
+        <div className="bg-[#0B0B0B] border-t border-gray-800/80">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between">
+              {/* Desktop Nav */}
+              <nav className="hidden lg:flex items-center space-x-1 py-1 overflow-x-auto scrollbar-none">
+                {[
+                  { id: "overview", label: "Dashboard", icon: Compass },
+                  { id: "profile", label: "Company Profile", icon: FileText },
+                  { id: "catalog", label: "Katalog Produk", icon: Coffee },
+                  { id: "mockups", label: "Mockup & Prompt AI", icon: Sparkles },
+                  { id: "article", label: "Artikel Ekspor", icon: BookOpen },
+                  { id: "guidelines", label: "Identitas Visual", icon: Palette },
+                  { id: "spec-builder", label: "Export Spec Builder", icon: Sliders },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className={`relative px-4 py-4 text-xs font-semibold uppercase tracking-wider flex items-center gap-2.5 transition-all outline-none ${
+                        isActive ? "text-white" : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      <Icon size={14} className={isActive ? "text-[#C8102E]" : "text-gray-500"} />
+                      <span>{tab.label}</span>
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeTabUnderline"
+                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#C8102E]"
+                          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+
+              {/* Mobile Menu Button */}
+              <div className="lg:hidden py-3 flex items-center justify-between w-full">
+                <span className="text-xs font-mono text-[#C8102E] font-bold">KDKMP BRAND REPOSITORI</span>
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="bg-gray-800 p-2 rounded-lg text-gray-300 focus:outline-none"
+                >
+                  {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Navigation Dropdown */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="lg:hidden border-t border-gray-800 bg-[#0E0E0E]"
+            >
+              <div className="px-4 py-3 space-y-1">
+                {[
+                  { id: "overview", label: "Dashboard Overview", icon: Compass },
+                  { id: "profile", label: "Company Profile", icon: FileText },
+                  { id: "catalog", label: "Katalog Produk", icon: Coffee },
+                  { id: "mockups", label: "Mockup & Prompt AI", icon: Sparkles },
+                  { id: "article", label: "Artikel Ekspor", icon: BookOpen },
+                  { id: "guidelines", label: "Identitas Visual", icon: Palette },
+                  { id: "spec-builder", label: "Export Spec Builder", icon: Sliders },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id as any);
+                        setMobileMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider text-left transition-colors ${
+                        isActive ? "bg-[#C8102E]/10 text-white border-l-4 border-[#C8102E]" : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                      }`}
+                    >
+                      <Icon size={16} />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
+
+      {/* Main Body */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
+        <AnimatePresence mode="wait">
+          {/* TAB 1: OVERVIEW / DASHBOARD */}
+          {activeTab === "overview" && (
+            <motion.div
+              key="overview"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-10"
+            >
+              {/* Feature Banner Card */}
+              <div className="relative rounded-3xl overflow-hidden border border-gray-800 bg-gradient-to-br from-gray-900 to-[#121212] p-8 md:p-12 shadow-2xl">
+                <div className="absolute right-0 bottom-0 top-0 w-full md:w-1/2 opacity-30 md:opacity-50 pointer-events-none z-0">
+                  <img
+                    src={premiumPouch}
+                    alt="KDKMP Premium Packaging Mockup"
+                    className="w-full h-full object-cover object-center"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-transparent to-transparent" />
+                </div>
+
+                <div className="relative z-10 max-w-2xl space-y-6">
+                  <span className="inline-flex items-center gap-1.5 bg-[#4E3629]/50 text-[#D2A679] border border-[#4E3629] text-[10px] font-mono uppercase tracking-widest px-3 py-1 rounded-full">
+                    <Sparkles size={11} />
+                    <span>Brand Release 2026</span>
+                  </span>
+                  <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-semibold text-white leading-tight">
+                    Mengintegrasikan Identitas Kebangsaan dengan <span className="text-[#C8102E] italic">Kopi Spesialiti</span> Kelas Dunia
+                  </h2>
+                  <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
+                    KDKMP menjembatani jerih payah ratusan keluarga petani di pegunungan Garut, Jawa Barat dengan industri kopi gelombang ketiga (third-wave coffee) di Asia, Eropa, dan Amerika. Kami mengontrol penuh mutu hulu ke hilir dengan standar kepatuhan tinggi dan model sosiopreneurship berkeadilan.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-4 pt-2">
+                    <button 
+                      onClick={() => setActiveTab("catalog")}
+                      className="bg-white text-gray-950 hover:bg-gray-100 font-semibold px-6 py-3 rounded-xl text-sm transition-colors flex items-center gap-2"
+                    >
+                      <span>Lihat Katalog Produk</span>
+                      <ArrowRight size={16} />
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab("article")}
+                      className="bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium px-6 py-3 rounded-xl text-sm border border-gray-700 transition-colors"
+                    >
+                      Baca Artikel Keberhasilan Koperasi
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pillars Section */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-[#121212] border border-gray-800 rounded-2xl p-6 relative overflow-hidden group hover:border-[#C8102E]/40 transition-colors">
+                  <div className="w-12 h-12 rounded-xl bg-[#C8102E]/10 border border-[#C8102E]/20 flex items-center justify-center text-[#C8102E] mb-4">
+                    <Award size={22} />
+                  </div>
+                  <h3 className="text-lg font-serif font-semibold text-white mb-2">Sertifikasi &amp; Mutu Ekspor</h3>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    Setiap lot diproduksi dengan sortasi mekanik dan manual yang ketat, menghasilkan biji kopi Specialty Grade dengan skor cupping rata-rata 83+ hingga 87+ poin SCAA.
+                  </p>
+                </div>
+
+                <div className="bg-[#121212] border border-gray-800 rounded-2xl p-6 relative overflow-hidden group hover:border-[#2C5E43]/40 transition-colors">
+                  <div className="w-12 h-12 rounded-xl bg-[#2C5E43]/10 border border-[#2C5E43]/20 flex items-center justify-center text-[#55B37D] mb-4">
+                    <Leaf size={22} />
+                  </div>
+                  <h3 className="text-lg font-serif font-semibold text-white mb-2">Agroforestry Berkelanjutan</h3>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    Tumbuh di bawah naungan pohon peneduh (shade-grown coffee) di ketinggian ekstrim Garut untuk melestarikan keanekaragaman hayati tanah vulkanik.
+                  </p>
+                </div>
+
+                <div className="bg-[#121212] border border-gray-800 rounded-2xl p-6 relative overflow-hidden group hover:border-[#4E3629]/40 transition-colors">
+                  <div className="w-12 h-12 rounded-xl bg-[#4E3629]/10 border border-[#4E3629]/20 flex items-center justify-center text-[#D2A679] mb-4">
+                    <Users size={22} />
+                  </div>
+                  <h3 className="text-lg font-serif font-semibold text-white mb-2">Kesejahteraan Petani</h3>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    Model sosiopreneur memangkas spekulan pasar, memberikan harga beli ceri merah hingga 45% di atas rata-rata pasar, dan mendanai asuransi kesehatan petani.
+                  </p>
+                </div>
+              </div>
+
+              {/* Stat counters */}
+              <div className="bg-[#0F0F0F] rounded-2xl border border-gray-800/80 p-8 grid grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="text-center space-y-1 border-r border-gray-800/80 last:border-r-0">
+                  <div className="text-xs font-mono text-[#C8102E] font-semibold uppercase">Ketinggian Tanam</div>
+                  <div className="text-2xl sm:text-3xl font-serif font-bold text-white">1.200 - 1.800m</div>
+                  <div className="text-[10px] text-gray-400 font-mono">Diatas Permukaan Laut (mdpl)</div>
+                </div>
+                <div className="text-center space-y-1 border-r border-gray-800/80 last:border-r-0">
+                  <div className="text-xs font-mono text-[#2C5E43] font-semibold uppercase">Petani Anggota</div>
+                  <div className="text-2xl sm:text-3xl font-serif font-bold text-white">450+ Mitra</div>
+                  <div className="text-[10px] text-gray-400 font-mono">Pemberdayaan Desa Mandiri</div>
+                </div>
+                <div className="text-center space-y-1 border-r border-gray-800/80 last:border-r-0">
+                  <div className="text-xs font-mono text-[#D2A679] font-semibold uppercase">Skor Cupping</div>
+                  <div className="text-2xl sm:text-3xl font-serif font-bold text-white">83 - 87+ Poin</div>
+                  <div className="text-[10px] text-gray-400 font-mono">CQI / SCAA Specialty Grade</div>
+                </div>
+                <div className="text-center space-y-1">
+                  <div className="text-xs font-mono text-blue-400 font-semibold uppercase">Jangkauan Ekspor</div>
+                  <div className="text-2xl sm:text-3xl font-serif font-bold text-white">Asia, EU, US</div>
+                  <div className="text-[10px] text-gray-400 font-mono">Tanjung Priok Port Ready</div>
+                </div>
+              </div>
+
+              {/* Quick Brand Prompt Highlight */}
+              <div className="bg-[#121212] rounded-2xl border border-gray-800 p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="space-y-1">
+                  <div className="text-xs font-semibold text-[#C8102E] tracking-wider uppercase font-mono">LAUNCH ASSET PROMPT</div>
+                  <h4 className="text-base font-serif font-medium text-white">KDKMP Official Corporate Logo Prompt</h4>
+                  <p className="text-xs text-gray-400 max-w-xl">
+                    Konsep logo modern yang memadukan siluet tiga Gunung Garut, biji kopi arabika sempurna, daun kopi ganda goni, dan pita Merah Putih melingkar.
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleCopy("Minimalist corporate flat design logo for Koperasi Desa Merah Putih. Featuring a stylized coffee bean, sleek mountain contours of Garut, and a coffee leaf, utilizing red, white, dark brown, and charcoal colors, clean vector look, isolated on a light background, elegant", "Logo AI Prompt")}
+                  className="bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold px-4 py-2.5 rounded-lg border border-gray-700 transition-colors flex items-center gap-2 self-start md:self-center shrink-0"
+                >
+                  <Copy size={13} />
+                  <span>Salin Prompt Logo</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* TAB 2: COMPANY PROFILE */}
+          {activeTab === "profile" && (
+            <motion.div
+              key="profile"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-8"
+            >
+              {/* Cover Card */}
+              <div className="bg-[#0F0F0F] rounded-3xl border border-gray-800 p-8 md:p-12 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-[#C8102E]/10 rounded-bl-full border-b border-l border-[#C8102E]/20" />
+                <div className="max-w-3xl space-y-4">
+                  <div className="text-xs font-mono text-[#C8102E] font-semibold tracking-widest uppercase">
+                    OFFICIAL COMPANY PROFILE
+                  </div>
+                  <h2 className="text-2xl sm:text-4xl font-serif font-bold text-white tracking-tight">
+                    {companyProfile.cover.heading}
+                  </h2>
+                  <p className="text-xs sm:text-sm font-mono text-[#D2A679]">
+                    {companyProfile.cover.subheading}
+                  </p>
+                  <div className="w-16 h-1 bg-[#C8102E] rounded my-4" />
+                  <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
+                    {companyProfile.cover.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Sections Display */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Timeline / Highlights Left Col */}
+                <div className="lg:col-span-4 space-y-6">
+                  <div className="bg-[#121212] border border-gray-800 rounded-2xl p-6 space-y-4">
+                    <h3 className="text-sm font-semibold text-white uppercase tracking-wider font-mono border-b border-gray-800 pb-2">
+                      Fakta Koperasi
+                    </h3>
+                    <div className="space-y-3 font-mono text-xs">
+                      <div>
+                        <span className="text-gray-400">Nama Resmi:</span>
+                        <p className="text-white font-semibold mt-0.5">Koperasi Desa Merah Putih (KDKMP)</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">Tahun Pendirian:</span>
+                        <p className="text-white font-semibold mt-0.5">2020 (Berbadan Hukum Resmi)</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">Domisili Kantor:</span>
+                        <p className="text-white font-semibold mt-0.5">Garut, Jawa Barat, Indonesia</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">Komoditas Utama:</span>
+                        <p className="text-white font-semibold mt-0.5">Arabica Specialty Grade Coffee</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">Skala Pasar:</span>
+                        <p className="text-white font-semibold mt-0.5">Ekspor Internasional &amp; Roastery Lokal</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#121212] border border-gray-800 rounded-2xl p-6 space-y-4">
+                    <h3 className="text-sm font-semibold text-white uppercase tracking-wider font-mono border-b border-gray-800 pb-2">
+                      Nilai Luhur KDKMP
+                    </h3>
+                    <div className="space-y-3">
+                      {[
+                        { title: "Integritas", desc: "Mutu jujur, kontrak presisi, transparansi rantai pasok." },
+                        { title: "Profesionalisme", desc: "Manajemen modern, standar ekspor tanpa kompromi." },
+                        { title: "Kolektif", desc: "Kesejahteraan petani mitra adalah prioritas utama." },
+                        { title: "Sustainabilitas", desc: "Praktik agroforestry ramah lingkungan dataran tinggi." },
+                      ].map((item, idx) => (
+                        <div key={idx} className="flex gap-3">
+                          <span className="text-[#C8102E] font-bold text-xs">0{idx+1}.</span>
+                          <div>
+                            <h4 className="text-xs font-semibold text-white">{item.title}</h4>
+                            <p className="text-[11px] text-gray-400 mt-0.5 leading-snug">{item.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Content Sections Right Col */}
+                <div className="lg:col-span-8 space-y-6">
+                  {companyProfile.sections.map((sec, idx) => (
+                    <div key={idx} className="bg-[#121212] border border-gray-800 rounded-2xl p-6 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-6 bg-[#C8102E] rounded-full" />
+                        <h3 className="text-xl font-serif font-bold text-white">{sec.title}</h3>
+                      </div>
+                      {Array.isArray(sec.content) ? (
+                        <div className="space-y-3 text-sm text-gray-300 leading-relaxed">
+                          {sec.content.map((p, pIdx) => (
+                            <p key={pIdx}>{p}</p>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-300 leading-relaxed">{sec.content}</p>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Copy Button for Company Profile Text */}
+                  <div className="p-4 bg-[#C8102E]/5 border border-[#C8102E]/25 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-2.5">
+                      <Info size={16} className="text-[#C8102E]" />
+                      <span className="text-xs text-gray-300">Butuh teks profil lengkap untuk proposal ekspor?</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const fullText = `COMPANY PROFILE KOPERASI DESA MERAH PUTIH (KDKMP)\n\n${companyProfile.cover.heading}\n${companyProfile.cover.subheading}\n\n${companyProfile.cover.description}\n\n` + 
+                          companyProfile.sections.map(s => `${s.title}\n${Array.isArray(s.content) ? s.content.join('\n') : s.content}`).join('\n\n');
+                        handleCopy(fullText, "Dokumen Company Profile KDKMP");
+                      }}
+                      className="bg-[#C8102E] hover:bg-[#A60D24] text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow"
+                    >
+                      <Copy size={13} />
+                      <span>Salin Lengkap Teks Profile</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* TAB 3: KATALOG PRODUK */}
+          {activeTab === "catalog" && (
+            <motion.div
+              key="catalog"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-8"
+            >
+              {/* Product Grid selection */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* List Side Panel */}
+                <div className="lg:col-span-4 space-y-3">
+                  <span className="text-xs font-semibold text-[#C8102E] font-mono tracking-wider uppercase block">
+                    PILIH PRODUK UNGGULAN
+                  </span>
+                  {productsList.map((prod) => {
+                    const isSelected = selectedProduct.id === prod.id;
+                    return (
+                      <button
+                        key={prod.id}
+                        onClick={() => setSelectedProduct(prod)}
+                        className={`w-full text-left p-4 rounded-xl border transition-all duration-300 flex items-start gap-3 ${
+                          isSelected
+                            ? "bg-[#C8102E]/10 border-[#C8102E] shadow-lg shadow-[#C8102E]/5"
+                            : "bg-[#121212] border-gray-800 hover:border-gray-700 hover:bg-[#161616]"
+                        }`}
+                      >
+                        <div className={`p-2 rounded-lg mt-0.5 shrink-0 ${isSelected ? "bg-[#C8102E] text-white" : "bg-gray-800 text-gray-400"}`}>
+                          <Coffee size={18} />
+                        </div>
+                        <div className="space-y-0.5 overflow-hidden">
+                          <h4 className="text-sm font-semibold text-white truncate">{prod.name}</h4>
+                          <p className="text-[10px] text-gray-400 font-mono italic truncate">{prod.englishName}</p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="text-[10px] bg-gray-800 text-gray-300 px-1.5 py-0.5 rounded font-mono">
+                              {prod.process.split("or")[0].trim()}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-mono">
+                              {prod.altitude.split("(")[0].trim()}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+
+                  {/* Dynamic interactive info card */}
+                  <div className="bg-[#121212] border border-gray-800 rounded-xl p-5 space-y-3 mt-6">
+                    <h5 className="text-xs font-mono text-[#D2A679] font-semibold uppercase">Traceability Promise</h5>
+                    <p className="text-[11px] text-gray-400 leading-relaxed">
+                      Setiap lot biji kopi ekspor KDKMP dilengkapi dengan sistem digital pelacakan tunggal (QR Traceability). Pembeli dapat memindai kode QR pada karung atau kotak kemasan untuk mengetahui letak koordinat perkebunan, nama petani pemetik, dan hasil rekaman cupping lab.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Detail Display Panel */}
+                <div className="lg:col-span-8">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={selectedProduct.id}
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="bg-[#121212] border border-gray-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl"
+                    >
+                      {/* Product Header */}
+                      <div className="border-b border-gray-800 pb-5 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="bg-[#C8102E]/10 text-[#C8102E] text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-[#C8102E]/20">
+                            SPECIALTY PROFILE
+                          </span>
+                          {selectedProduct.certification.map((cert, cidx) => (
+                            <span key={cidx} className="bg-emerald-950/40 text-emerald-400 border border-emerald-900/40 text-[10px] font-mono px-2 py-0.5 rounded">
+                              {cert}
+                            </span>
+                          ))}
+                        </div>
+                        <h3 className="text-2xl sm:text-3xl font-serif font-bold text-white mt-1">
+                          {selectedProduct.name}
+                        </h3>
+                        <p className="text-xs font-mono text-[#D2A679] italic">
+                          {selectedProduct.englishName}
+                        </p>
+                        <p className="text-xs text-gray-400 font-medium">
+                          &ldquo;{selectedProduct.tagline}&rdquo;
+                        </p>
+                      </div>
+
+                      {/* Product Description */}
+                      <div className="space-y-2 text-sm leading-relaxed text-gray-300">
+                        <p>{selectedProduct.description}</p>
+                      </div>
+
+                      {/* Technical specifications Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="bg-[#161616] p-4 rounded-xl border border-gray-800/80 space-y-1">
+                          <span className="text-[10px] text-[#2C5E43] font-mono uppercase font-bold tracking-wider">Ketinggian Tanam (Altitude)</span>
+                          <p className="text-sm font-semibold text-white">{selectedProduct.altitude}</p>
+                        </div>
+                        <div className="bg-[#161616] p-4 rounded-xl border border-gray-800/80 space-y-1">
+                          <span className="text-[10px] text-[#4E3629] font-mono uppercase font-bold tracking-wider">Proses Pengolahan (Process)</span>
+                          <p className="text-sm font-semibold text-white">{selectedProduct.process}</p>
+                        </div>
+                        <div className="bg-[#161616] p-4 rounded-xl border border-gray-800/80 space-y-1">
+                          <span className="text-[10px] text-[#C8102E] font-mono uppercase font-bold tracking-wider">Aroma (Bouquet)</span>
+                          <p className="text-sm font-semibold text-white italic text-gray-300">{selectedProduct.aroma}</p>
+                        </div>
+                        <div className="bg-[#161616] p-4 rounded-xl border border-gray-800/80 space-y-1">
+                          <span className="text-[10px] text-blue-400 font-mono uppercase font-bold tracking-wider">Format Kemasan (Packaging)</span>
+                          <p className="text-sm font-semibold text-white">{selectedProduct.packaging.join(" / ")}</p>
+                        </div>
+                      </div>
+
+                      {/* Taste Profile Bars */}
+                      <div className="bg-[#161616] p-5 rounded-2xl border border-gray-800 space-y-4">
+                        <h4 className="text-xs font-mono text-white font-semibold uppercase tracking-wider">
+                          Karakter Rasa (Sensory Attribute Scores)
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-xs">
+                          {[
+                            { name: "Acidity (Keasaman)", val: activeSpecProductTasteProfile.acidity, color: "bg-[#C8102E]" },
+                            { name: "Body (Kekentalan)", val: activeSpecProductTasteProfile.body, color: "bg-[#4E3629]" },
+                            { name: "Sweetness (Kemanisan)", val: activeSpecProductTasteProfile.sweetness, color: "bg-[#D2A679]" },
+                            { name: "Balance (Keseimbangan)", val: activeSpecProductTasteProfile.balance, color: "bg-[#2C5E43]" },
+                          ].map((attr, idx) => (
+                            <div key={idx} className="space-y-1">
+                              <div className="flex justify-between font-mono text-gray-400">
+                                <span>{attr.name}</span>
+                                <span className="font-bold text-white">{attr.val} / 10</span>
+                              </div>
+                              <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                                <motion.div 
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${attr.val * 10}%` }}
+                                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                                  className={`h-full ${attr.color}`} 
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="pt-2 border-t border-gray-800/50">
+                          <span className="text-[10px] text-gray-400 font-mono">Taste Notes Summary:</span>
+                          <p className="text-xs text-white font-serif italic font-medium mt-0.5">{selectedProduct.tasteProfile}</p>
+                        </div>
+                      </div>
+
+                      {/* Advantages & Bullets */}
+                      <div className="space-y-3">
+                        <h4 className="text-xs font-mono text-[#2C5E43] font-semibold uppercase tracking-wider">
+                          Keunggulan Utama (Key Benefits)
+                        </h4>
+                        <ul className="space-y-1.5 text-xs text-gray-300">
+                          {selectedProduct.advantages.map((adv, aidx) => (
+                            <li key={aidx} className="flex items-start gap-2">
+                              <span className="text-[#C8102E] mt-0.5 shrink-0">✔</span>
+                              <span>{adv}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Target Market */}
+                      <div className="bg-[#1A1A1A] p-4 rounded-xl border border-gray-800 flex flex-wrap gap-2 items-center">
+                        <span className="text-[10px] font-mono text-gray-400 uppercase font-bold tracking-wider shrink-0 mr-2">Target Pasar Ekspor:</span>
+                        {selectedProduct.targetMarket.map((tgt, tidx) => (
+                          <span key={tidx} className="bg-gray-800 text-gray-300 border border-gray-700 text-xs px-2.5 py-1 rounded-full font-medium">
+                            {tgt}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Product Photo Prompt */}
+                      <div className="bg-[#0B0B0B] border border-gray-800 rounded-2xl p-5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-xs text-[#D2A679] font-mono uppercase font-bold">
+                            <Sparkles size={13} />
+                            <span>AI Product Photo Prompt</span>
+                          </div>
+                          <button
+                            onClick={() => handleCopy(selectedProduct.imagePrompt, selectedProduct.name)}
+                            className="bg-gray-800 hover:bg-gray-700 text-gray-200 text-[10px] font-semibold px-3 py-1.5 rounded-lg border border-gray-700 transition-colors flex items-center gap-1.5"
+                          >
+                            <Copy size={11} />
+                            <span>Salin Prompt</span>
+                          </button>
+                        </div>
+                        <p className="text-xs font-mono bg-gray-900/60 p-4 rounded-lg text-gray-400 border border-gray-800/50 leading-relaxed max-h-24 overflow-y-auto">
+                          {selectedProduct.imagePrompt}
+                        </p>
+                        <p className="text-[10px] text-gray-500 italic">
+                          *Gunakan prompt di atas pada AI Image Generator (seperti Midjourney atau Imagen) untuk menghasilkan foto produk beresolusi tinggi yang serupa dengan katalog resmi ekspor.
+                        </p>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* TAB 4: MOCKUPS & PROMPT PLAYGROUND */}
+          {activeTab === "mockups" && (
+            <motion.div
+              key="mockups"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-8"
+            >
+              <div className="bg-[#0F0F0F] rounded-3xl border border-gray-800 p-8 flex flex-col md:flex-row items-center justify-between gap-8">
+                <div className="max-w-2xl space-y-3">
+                  <span className="bg-[#4E3629]/50 text-[#D2A679] border border-[#4E3629] text-[10px] font-mono uppercase tracking-wider px-3 py-1 rounded">
+                    MOCKUP PRESENTATION SYSTEM
+                  </span>
+                  <h3 className="text-2xl font-serif font-semibold text-white">
+                    Premium Mockup Prompts for International Branding
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
+                    Setiap prompt mockup dirancang berdasarkan konsep <strong>&ldquo;Minimalist Luxury&rdquo;</strong> untuk merepresentasikan KDKMP sebagai jenama ekspor premium internasional. Gunakan prompt siap-pakai ini di generator AI Anda untuk keperluan materi promosi, lembar jualan (sell-sheets), dan katalog presentasi buyer.
+                  </p>
+                </div>
+                <div className="w-20 h-20 bg-[#C8102E]/5 rounded-2xl border border-[#C8102E]/25 flex items-center justify-center text-[#C8102E] shrink-0">
+                  <Sparkles size={36} className="animate-pulse" />
+                </div>
+              </div>
+
+              {/* Mockup cards grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {mockupPrompts.map((mock, idx) => (
+                  <div key={idx} className="bg-[#121212] border border-gray-800 rounded-2xl p-6 space-y-4 flex flex-col justify-between hover:border-gray-700 transition-all">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="bg-gray-800 text-gray-300 border border-gray-700 text-[10px] font-mono font-bold px-2 py-0.5 rounded">
+                          {mock.type}
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-mono">
+                          {mock.size}
+                        </span>
+                      </div>
+                      <h4 className="text-base font-serif font-bold text-white">Concept: {mock.concept.split(".")[0]}</h4>
+                      <p className="text-xs text-gray-400 leading-relaxed font-sans">{mock.concept}</p>
+                      
+                      <div className="bg-[#0B0B0B] border border-gray-800 rounded-xl p-4 font-mono text-[11px] text-gray-400 leading-relaxed max-h-24 overflow-y-auto select-all">
+                        {mock.promptText}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleCopy(mock.promptText, `Mockup ${mock.type}`)}
+                      className="w-full mt-4 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold py-2.5 rounded-lg border border-gray-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Copy size={13} />
+                      <span>Salin Prompt Mockup</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* TAB 5: ARTIKEL EKSPOR */}
+          {activeTab === "article" && (
+            <motion.div
+              key="article"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25 }}
+              className="max-w-4xl mx-auto space-y-8"
+            >
+              {/* Cover layout */}
+              <article className="bg-[#121212] border border-gray-800 rounded-3xl p-6 sm:p-10 lg:p-12 space-y-8 shadow-2xl relative">
+                {/* Vintage top corner stamp */}
+                <div className="absolute top-0 right-0 p-6 opacity-5 select-none pointer-events-none">
+                  <Coffee size={200} />
+                </div>
+
+                <div className="space-y-4 border-b border-gray-800 pb-8 relative z-10">
+                  <div className="flex flex-wrap items-center gap-2.5 text-xs font-mono font-bold">
+                    <span className="text-[#C8102E] tracking-wider uppercase bg-[#C8102E]/10 px-2 py-0.5 rounded border border-[#C8102E]/20">BUSINESS MAGAZINE</span>
+                    <span className="text-gray-400">•</span>
+                    <span className="text-gray-400 flex items-center gap-1">
+                      <Calendar size={12} />
+                      {featuredArticle.date}
+                    </span>
+                    <span className="text-gray-400">•</span>
+                    <span className="text-gray-400 flex items-center gap-1">
+                      <Clock size={12} />
+                      {featuredArticle.readingTime}
+                    </span>
+                  </div>
+
+                  <h1 className="text-2xl sm:text-4xl font-serif font-bold text-white leading-tight">
+                    {featuredArticle.title}
+                  </h1>
+                  <p className="text-sm sm:text-base text-gray-300 leading-relaxed italic border-l-2 border-[#C8102E] pl-4">
+                    {featuredArticle.subtitle}
+                  </p>
+                  
+                  <div className="flex items-center gap-3 pt-2 text-xs font-mono text-gray-400">
+                    <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center font-bold text-white text-[10px] border border-gray-700 uppercase">
+                      KDK
+                    </div>
+                    <div>
+                      <span>Ditulis oleh: <strong>{featuredArticle.author}</strong></span>
+                      <p className="text-[10px] text-gray-500">Corporate &amp; Public Relations Committee KDKMP</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Article Body */}
+                <div className="space-y-6 text-sm sm:text-base text-gray-300 leading-relaxed font-sans max-w-none">
+                  {/* Pull Quote */}
+                  <div className="float-right w-full sm:w-72 bg-gradient-to-br from-[#1A1A1A] to-[#121212] border-t-4 border-[#C8102E] p-5 rounded-r-xl ml-0 sm:ml-6 my-4 shadow-lg space-y-2">
+                    <p className="text-xs sm:text-sm font-serif italic text-white font-semibold">
+                      &ldquo;Koperasi Desa Merah Putih bukan sekadar mengekspor biji kopi Arabika Garut terbaik; mereka sedang mengirimkan pesan kebanggaan, integritas, dan martabat bangsa Indonesia ke seluruh dunia.&rdquo;
+                    </p>
+                    <span className="block text-[10px] font-mono text-gray-500 uppercase font-bold">— Executive Board of KDKMP</span>
+                  </div>
+
+                  {/* Render paragraphs dynamically */}
+                  {featuredArticle.content.map((para, pIdx) => (
+                    <p key={pIdx} className="first-letter:text-4xl first-letter:font-serif first-letter:font-bold first-letter:text-[#C8102E] first-letter:float-left first-letter:mr-2 first-letter:mt-1">
+                      {pIdx === 0 ? para : para.replace(/^[A-Z]/, (c) => c)}
+                    </p>
+                  ))}
+                </div>
+
+                {/* Footnotes & Highlights */}
+                <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-xs text-gray-400 font-mono">
+                    Materi Publikasi Resmi Ekspor KDKMP © 2026. All Rights Reserved.
+                  </div>
+                  <button
+                    onClick={() => handleCopy(featuredArticle.title + "\n\n" + featuredArticle.content.join("\n\n"), "Artikel Ekspor KDKMP")}
+                    className="bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold px-4 py-2.5 rounded-lg border border-gray-700 transition-colors flex items-center gap-2"
+                  >
+                    <Copy size={13} />
+                    <span>Salin Artikel Lengkap (1.500+ Kata)</span>
+                  </button>
+                </div>
+              </article>
+            </motion.div>
+          )}
+
+          {/* TAB 6: IDENTITAS VISUAL & BRAND GUIDELINES */}
+          {activeTab === "guidelines" && (
+            <motion.div
+              key="guidelines"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-10"
+            >
+              {/* Logo Philosophy Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <div className="lg:col-span-5 bg-[#121212] border border-gray-800 rounded-3xl p-6 text-center space-y-6">
+                  <span className="text-xs font-semibold text-[#C8102E] font-mono tracking-wider uppercase block">
+                    LOGO RESMI KOPERASI
+                  </span>
+                  <div className="w-48 h-48 rounded-2xl mx-auto overflow-hidden border border-gray-800 bg-white p-2 shadow-2xl">
+                    <img
+                      src={logoKdkmp}
+                      alt="KDKMP Official Logo Visual"
+                      className="w-full h-full object-contain"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-lg font-serif font-bold text-white">Koperasi Desa Merah Putih</h4>
+                    <p className="text-xs text-gray-400 font-mono max-w-xs mx-auto">
+                      Flat Corporate Design. Merah kedaulatan, putih murni, coklat espresso vulkanis, dan hitam obsidian.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleCopy("Minimalist corporate flat design logo for Koperasi Desa Merah Putih. Featuring a stylized coffee bean, sleek mountain contours of Garut, and a coffee leaf, utilizing red, white, dark brown, and charcoal colors, clean vector look, isolated on a light background, elegant", "Logo AI Prompt")}
+                    className="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold py-2.5 rounded-lg border border-gray-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Copy size={13} />
+                    <span>Salin Prompt Desain Logo</span>
+                  </button>
+                </div>
+
+                <div className="lg:col-span-7 bg-[#121212] border border-gray-800 rounded-3xl p-6 sm:p-8 space-y-6">
+                  <div className="flex items-center gap-2">
+                    <Palette size={20} className="text-[#C8102E]" />
+                    <h3 className="text-xl font-serif font-bold text-white">{brandGuideline.logoPhilosophy.title}</h3>
+                  </div>
+                  <div className="space-y-4">
+                    {brandGuideline.logoPhilosophy.points.map((pt, pidx) => (
+                      <div key={pidx} className="border-l-2 border-gray-800 pl-4 space-y-1">
+                        <h4 className="text-sm font-semibold text-white">{pt.element}</h4>
+                        <p className="text-xs text-gray-400 leading-relaxed">{pt.meaning}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Brand Color Swatches (Interactive) */}
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <span className="text-xs font-semibold text-[#C8102E] font-mono tracking-wider uppercase">
+                    SKEMA WARNA BRAND (BRAND COLOR PALETTE)
+                  </span>
+                  <h3 className="text-lg font-serif font-bold text-white">Click any color block to copy its HEX Code</h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  {brandColors.map((color, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleCopy(color.hex, `${color.name} HEX`)}
+                      className="bg-[#121212] border border-gray-800 rounded-2xl p-4 text-left transition-all hover:scale-[1.02] active:scale-95 duration-150 focus:outline-none flex flex-col justify-between space-y-4"
+                    >
+                      <div>
+                        {/* Swatch color bubble */}
+                        <div 
+                          className="h-16 w-full rounded-lg shadow-inner border border-gray-800 mb-3" 
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <h4 className="text-sm font-serif font-bold text-white truncate">{color.name}</h4>
+                        <p className="text-[10px] text-gray-400 font-mono italic truncate">{color.indonesianName}</p>
+                      </div>
+                      
+                      <div className="space-y-1.5 font-mono text-[10px] border-t border-gray-800/80 pt-2 w-full">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">HEX:</span>
+                          <span className="text-white font-bold">{color.hex}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">PANTONE:</span>
+                          <span className="text-white truncate max-w-[80px]">{color.pantone}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">RGB:</span>
+                          <span className="text-white truncate max-w-[80px]">{color.rgb}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">CMYK:</span>
+                          <span className="text-white truncate max-w-[80px]">{color.cmyk}</span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Typography & Packaging Style Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-[#121212] border border-gray-800 rounded-2xl p-6 space-y-4">
+                  <h4 className="text-sm font-semibold text-white uppercase tracking-wider font-mono border-b border-gray-800 pb-2">
+                    Typography Pairing
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <span className="text-xs text-[#C8102E] font-mono uppercase font-bold">Display Font: {brandGuideline.typography.display.name}</span>
+                      <p className="text-xs text-gray-400 leading-relaxed">{brandGuideline.typography.display.usage}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-[#2C5E43] font-mono uppercase font-bold">Body &amp; Technical Font: {brandGuideline.typography.primary.name}</span>
+                      <p className="text-xs text-gray-400 leading-relaxed">{brandGuideline.typography.primary.usage}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-[#121212] border border-gray-800 rounded-2xl p-6 space-y-4">
+                  <h4 className="text-sm font-semibold text-white uppercase tracking-wider font-mono border-b border-gray-800 pb-2">
+                    Packaging &amp; Materials Design
+                  </h4>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    {brandGuideline.packagingStyle.description}
+                  </p>
+                  <div className="space-y-2">
+                    {brandGuideline.packagingStyle.materials.map((mat, idx) => (
+                      <div key={idx} className="flex gap-2 text-xs">
+                        <span className="text-[#D2A679] font-bold">•</span>
+                        <p className="text-gray-300 leading-snug">{mat}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tone of Voice Traits */}
+              <div className="bg-[#121212] border border-gray-800 rounded-2xl p-6 space-y-4">
+                <h4 className="text-sm font-semibold text-white uppercase tracking-wider font-mono border-b border-gray-800 pb-2">
+                  Tone of Voice Guidelines (Brand Voice)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {brandGuideline.toneOfVoice.traits.map((trait, idx) => (
+                    <div key={idx} className="space-y-1.5">
+                      <span className="text-xs text-[#C8102E] font-mono font-bold uppercase">{trait.trait}</span>
+                      <p className="text-xs text-gray-400 leading-relaxed">{trait.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Taglines alternatives list */}
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <span className="text-xs font-semibold text-[#C8102E] font-mono tracking-wider uppercase">
+                    ALTERNATIF TAGLINE PILIHAN (BRAND TAGLINES)
+                  </span>
+                  <h3 className="text-lg font-serif font-bold text-white">10 Alternatif Tagline dengan Terjemahan &amp; Konsep Semantik</h3>
+                </div>
+
+                <div className="bg-[#121212] border border-gray-800 rounded-2xl overflow-hidden shadow">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#1A1A1A] border-b border-gray-800 text-gray-400 uppercase font-mono text-[10px]">
+                        <tr>
+                          <th className="p-4 w-12 text-center">No</th>
+                          <th className="p-4 w-1/3">Bahasa Indonesia</th>
+                          <th className="p-4 w-1/3">English Equivalent</th>
+                          <th className="p-4">Konsep Semantik (Core Concept)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-800/60">
+                        {taglineAlternatives.map((alt, idx) => (
+                          <tr key={idx} className="hover:bg-gray-800/25 transition-colors">
+                            <td className="p-4 text-center font-mono font-bold text-gray-500">{idx + 1}</td>
+                            <td className="p-4 font-serif font-semibold text-white">{alt.indonesian}</td>
+                            <td className="p-4 text-gray-300 italic">{alt.english}</td>
+                            <td className="p-4 text-xs text-gray-400 leading-snug">{alt.concept}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* TAB 7: EXPORT SPEC BUILDER & INQUIRY CALCULATOR */}
+          {activeTab === "spec-builder" && (
+            <motion.div
+              key="spec-builder"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-8"
+            >
+              <div className="bg-[#0F0F0F] rounded-3xl border border-gray-800 p-8 flex flex-col lg:flex-row gap-8 items-center justify-between">
+                <div className="max-w-2xl space-y-3">
+                  <span className="bg-[#C8102E]/20 text-[#C8102E] border border-[#C8102E]/30 text-[10px] font-mono uppercase tracking-wider px-3 py-1 rounded inline-block">
+                    PROSPECTIVE BUYER UTILITY
+                  </span>
+                  <h3 className="text-2xl font-serif font-semibold text-white">
+                    Interactive Export Specification Sheet &amp; Inquiry Builder
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
+                    Sistem simulator ini dirancang khusus bagi calon <strong>Importir Kopi Internasional, Coffee Roastery, dan Distributor Premium</strong>. Tentukan jenis kopi, volume kontrak, incoterm dagang, dan pelabuhan tujuan untuk menghasilkan lembar spesifikasi pengiriman KDKMP resmi yang terstruktur.
+                  </p>
+                </div>
+                <div className="bg-[#121212] border border-gray-800 rounded-2xl p-4 shrink-0 text-center space-y-1">
+                  <div className="text-xs font-mono text-[#D2A679]">KAPASITAS SUPLAI KOPERASI</div>
+                  <div className="text-2xl font-serif font-bold text-white">45.000 KG / Bulan</div>
+                  <div className="text-[9px] text-gray-500 font-mono">Pelabuhan Muat: Tanjung Priok (IDTPP)</div>
+                </div>
+              </div>
+
+              {/* Calculator Container */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Configuration side panel */}
+                <div className="lg:col-span-5 bg-[#121212] border border-gray-800 rounded-3xl p-6 space-y-5">
+                  <h4 className="text-xs font-semibold text-white uppercase tracking-wider font-mono border-b border-gray-800 pb-2 flex items-center gap-2">
+                    <Sliders size={14} className="text-[#C8102E]" />
+                    <span>Konfigurasi Permintaan (Inquiry)</span>
+                  </h4>
+
+                  {/* 1. Select Product */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono text-gray-400">1. Komoditas Kopi Arabika Garut:</label>
+                    <select
+                      value={specProduct}
+                      onChange={(e) => setSpecProduct(e.target.value)}
+                      className="w-full bg-gray-900 border border-gray-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-[#C8102E] transition-colors font-sans"
+                    >
+                      {productsList.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 2. Volume slider */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-mono">
+                      <label className="text-gray-400">2. Volume Kontrak (Order Volume):</label>
+                      <span className="text-white font-bold">{specVolume.toLocaleString()} KG</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={500}
+                      max={20000}
+                      step={500}
+                      value={specVolume}
+                      onChange={(e) => setSpecVolume(parseInt(e.target.value))}
+                      className="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-[#C8102E]"
+                    />
+                    <div className="flex justify-between text-[10px] text-gray-500 font-mono">
+                      <span>Min: 500 KG (LCL)</span>
+                      <span>Max: 20.000 KG (1 FCL)</span>
+                    </div>
+                  </div>
+
+                  {/* 3. Select Incoterm */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono text-gray-400">3. Syarat Dagang Internasional (Incoterm):</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(["FOB", "CIF", "EXW"] as const).map((inc) => (
+                        <button
+                          key={inc}
+                          onClick={() => setSpecIncoterm(inc)}
+                          className={`py-2 rounded-lg text-xs font-mono font-bold border transition-colors ${
+                            specIncoterm === inc
+                              ? "bg-[#C8102E]/20 border-[#C8102E] text-white"
+                              : "bg-gray-900 border-gray-800 text-gray-400 hover:border-gray-700"
+                          }`}
+                        >
+                          {inc}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-gray-500 leading-relaxed mt-1">
+                      {specIncoterm === "FOB" && "*FOB: Harga di luar biaya kargo laut, komitmen serah terima di Pelabuhan Tanjung Priok, Jakarta."}
+                      {specIncoterm === "CIF" && "*CIF: Harga sudah termasuk pengapalan kontainer laut bersuhu stabil dan asuransi ke pelabuhan tujuan."}
+                      {specIncoterm === "EXW" && "*EXW: Serah terima langsung di Stasiun Pengolahan Pusat Koperasi KDKMP, Garut, Jawa Barat."}
+                    </p>
+                  </div>
+
+                  {/* 4. Destination Port */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono text-gray-400">4. Pelabuhan Tujuan (Destination Port):</label>
+                    <select
+                      value={specDestination}
+                      onChange={(e) => setSpecDestination(e.target.value)}
+                      className="w-full bg-gray-900 border border-gray-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-[#C8102E] transition-colors"
+                      disabled={specIncoterm === "EXW"}
+                    >
+                      <option value="Tokyo Port (Japan)">Port of Tokyo (Japan)</option>
+                      <option value="Hamburg Port (Germany)">Port of Hamburg (Germany)</option>
+                      <option value="Rotterdam Port (Netherlands)">Port of Rotterdam (Netherlands)</option>
+                      <option value="Los Angeles Port (United States)">Port of Los Angeles (USA)</option>
+                      <option value="Singapore Port (Singapore)">Port of Singapore (Singapore)</option>
+                      <option value="Sydney Port (Australia)">Port of Sydney (Australia)</option>
+                    </select>
+                  </div>
+
+                  {/* 5. Select Packaging */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono text-gray-400">5. Jenis Kemasan Pengapalan:</label>
+                    <select
+                      value={specPackaging}
+                      onChange={(e) => setSpecPackaging(e.target.value)}
+                      className="w-full bg-gray-900 border border-gray-800 rounded-lg p-2.5 text-xs text-white focus:outline-none"
+                    >
+                      {selectedSpecProductDetails.packaging.map((pack, pidx) => (
+                        <option key={pidx} value={pack}>
+                          {pack}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Spec sheet preview panel */}
+                <div className="lg:col-span-7">
+                  <div className="bg-[#1A1A1A] border-2 border-dashed border-gray-800 rounded-3xl p-6 sm:p-8 space-y-6 relative overflow-hidden bg-radial-gradient">
+                    {/* Watermark Logo KDKMP in background */}
+                    <div className="absolute inset-0 opacity-5 flex items-center justify-center pointer-events-none select-none">
+                      <Coffee size={250} />
+                    </div>
+
+                    {/* Sheet Header */}
+                    <div className="flex flex-col sm:flex-row items-start justify-between border-b border-gray-800 pb-5 gap-4 relative z-10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded bg-white p-0.5 border border-[#C8102E]">
+                          <img
+                            src={logoKdkmp}
+                            alt="Logo KDKMP small"
+                            className="w-full h-full object-contain"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-mono text-gray-400 uppercase tracking-widest block">INDONESIAN OFFICIAL QUOTE REPORT</span>
+                          <h5 className="text-sm font-serif font-bold text-white">KDKMP EXPORT SPECIFICATIONS</h5>
+                          <p className="text-[10px] font-mono text-gray-500">Ref No: KDKMP-EXP/2026/07-21</p>
+                        </div>
+                      </div>
+                      <div className="text-left sm:text-right">
+                        <span className="text-xs bg-[#C8102E]/15 text-[#C8102E] px-2.5 py-1 rounded font-mono font-bold uppercase border border-[#C8102E]/25">
+                          Inquiry Draft
+                        </span>
+                        <p className="text-[9px] text-gray-400 font-mono mt-1">Generated: 2026-07-21 (GMT+7)</p>
+                      </div>
+                    </div>
+
+                    {/* Specifications Body */}
+                    <div className="space-y-4 text-xs font-mono relative z-10">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <span className="text-gray-400 text-[10px]">NAMA PRODUK / RAW COMMODITY:</span>
+                          <p className="text-white font-bold">{selectedSpecProductDetails.name}</p>
+                          <p className="text-gray-400 italic text-[10px]">{selectedSpecProductDetails.englishName}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-gray-400 text-[10px]">KETENTUAN SYARAT DAGANG:</span>
+                          <p className="text-white font-bold">{specIncoterm} ({specIncoterm === "EXW" ? "EX WORKS GARUT" : specIncoterm === "FOB" ? "FREE ON BOARD IDTPP" : "CIF HARBOR OVERSEAS"})</p>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-gray-400 text-[10px]">KETINGGIAN TANAM &amp; TERROIR:</span>
+                          <p className="text-white font-bold">{selectedSpecProductDetails.altitude}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-gray-400 text-[10px]">METODE PROSES PASCA PANEN:</span>
+                          <p className="text-white font-bold">{selectedSpecProductDetails.process}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-gray-400 text-[10px]">VOLUME PERMINTAAN KONTRAK:</span>
+                          <p className="text-white font-bold">{specVolume.toLocaleString()} KG ({ (specVolume / 1000).toFixed(1) } Metric Tons)</p>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-gray-400 text-[10px]">PELABUHAN TUJUAN BONGKAR:</span>
+                          <p className="text-white font-bold">{specIncoterm === "EXW" ? "N/A (Ex-Works Garut)" : specDestination}</p>
+                        </div>
+                      </div>
+
+                      {/* Financial / Cost Projections */}
+                      <div className="bg-[#121212] p-4 rounded-xl border border-gray-800 space-y-3 mt-4">
+                        <div className="text-[10px] text-gray-400 uppercase font-bold border-b border-gray-800 pb-1.5 flex justify-between">
+                          <span>ESTIMASI PROYEKSI HARGA EKSPOR (EXPORT VALUE PROJECTION)</span>
+                          <span className="text-[#D2A679]">CURRENCY INDONESIAN RUPIAH (IDR)</span>
+                        </div>
+                        <div className="space-y-1.5 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Harga Satuan Base (per KG):</span>
+                            <span className="text-white font-bold">IDR {calculatedSpec.basePricePerKg.toLocaleString()} / KG</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Subtotal Komoditas Kopi:</span>
+                            <span className="text-white font-bold">IDR {calculatedSpec.subtotal.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Estimasi Kargo, Handling &amp; Asuransi ({specIncoterm}):</span>
+                            <span className="text-white font-bold">{calculatedSpec.shippingFreight > 0 ? `IDR ${calculatedSpec.shippingFreight.toLocaleString()}` : "IDR 0 (Free)"}</span>
+                          </div>
+                          <div className="h-px bg-gray-800 my-2" />
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-200 font-bold uppercase">Total Estimasi Nilai Kontrak:</span>
+                            <span className="text-[#C8102E] font-bold">IDR {calculatedSpec.totalCost.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-[10px] text-gray-500 italic mt-1">
+                            <span>*Estimasi Kontainer Pengapalan:</span>
+                            <span>{calculatedSpec.estContainers} x 20-Foot Dry Container (Fitted with Moisture Absorbers)</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Traceability and Seal */}
+                      <div className="space-y-2 border-t border-gray-800 pt-4 flex flex-col sm:flex-row items-center justify-between text-[10px] text-gray-500 gap-4">
+                        <div>
+                          <p>• Mutu Bergaransi SNI (Standar Nasional Indonesia)</p>
+                          <p>• Keanggotaan Sertifikasi Indikasi Geografis Garut</p>
+                          <p>• Pembagian keuntungan berkeadilan 15% dana sosial petani anggota</p>
+                        </div>
+                        {/* Fake signature / seal placeholder */}
+                        <div className="text-center shrink-0 border border-gray-800 p-2 rounded bg-[#121212] min-w-[120px]">
+                          <span className="text-[#C8102E] font-bold block">KDKMP OFFICIAL</span>
+                          <span className="text-[8px] text-gray-500 uppercase block font-mono">Export Board Seal</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions on Sheet */}
+                    <div className="flex flex-wrap items-center gap-3 border-t border-gray-800 pt-5 relative z-10">
+                      <button
+                        onClick={() => {
+                          const quoteText = `EXPORT INQUIRY SPECIFICATION BRIEF\nKOPERASI DESA MERAH PUTIH (KDKMP)\n----------------------------------------\nCommodity: ${selectedSpecProductDetails.name}\nIncoterm: ${specIncoterm}\nVolume: ${specVolume.toLocaleString()} KG\nDestination: ${specIncoterm === "EXW" ? "EX WORKS GARUT" : specDestination}\nPackaging: ${specPackaging}\n\nBase Price per KG: IDR ${calculatedSpec.basePricePerKg.toLocaleString()}\nSubtotal: IDR ${calculatedSpec.subtotal.toLocaleString()}\nShipping/Logistics: IDR ${calculatedSpec.shippingFreight.toLocaleString()}\nTotal Est Contract Value: IDR ${calculatedSpec.totalCost.toLocaleString()}\nEst Shipping Container: ${calculatedSpec.estContainers} x 20-Foot Container\n\n© 2026 Koperasi Desa Merah Putih Garut Indonesia`;
+                          handleCopy(quoteText, `Inquiry Spec Brief ${specIncoterm}`);
+                        }}
+                        className="bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold px-4 py-2.5 rounded-lg border border-gray-700 transition-colors flex items-center gap-2"
+                      >
+                        <Copy size={13} />
+                        <span>Salin Ringkasan Kontrak Spec</span>
+                      </button>
+                      <button
+                        onClick={() => window.print()}
+                        className="bg-[#C8102E] hover:bg-[#A60D24] text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition-colors flex items-center gap-2 shadow"
+                      >
+                        <Printer size={13} />
+                        <span>Cetak Lembar Spesifikasi (PDF)</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+
+      {/* Footer */}
+      <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 border-t border-gray-800/80 pt-8 text-center sm:text-left">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-gray-400">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded overflow-hidden bg-white p-0.5 border border-gray-800 shrink-0">
+              <img
+                src={logoKdkmp}
+                alt="Logo KDKMP footer"
+                className="w-full h-full object-contain"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+            <div>
+              <p className="font-semibold text-white">Koperasi Desa Merah Putih (KDKMP)</p>
+              <p className="text-[10px] text-gray-500">Stasiun Pengolahan Pusat Lereng Gunung Cikuray, Garut, Jawa Barat, Indonesia</p>
+            </div>
+          </div>
+          <div className="space-y-1 sm:text-right">
+            <p className="font-mono text-[10px]">PORTAL EKSPOR DIGITAL &amp; BRAND KIT V1.0</p>
+            <p className="text-gray-500">Sustaining Indonesian Specialty Coffee Heritage Globally © 2026. All Rights Reserved.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
